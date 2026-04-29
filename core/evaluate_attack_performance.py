@@ -52,7 +52,7 @@ ALL_SUPPORTED_VICTIMS = list(MODEL_INPUT_SIZES.keys()) + ["FaceAPI", "IR152"]
 
 ATTACK_TO_PATH_COL = {attack: ATTACK_COLS[attack] for attack in ALL_ATTACKS}
 
-FACEAPI_URL = "https://4a6e5daeedc3bf3aab.gradio.live/compareFaces"
+FACEAPI_URL = ""
 FACEAPI_INPUT_SIZE = (160, 160)
 FACEAPI_JPEG_QUALITY = 100
 IR152_INPUT_SIZE = (112, 112)
