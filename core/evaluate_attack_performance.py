@@ -19,7 +19,7 @@ from PIL import Image
 from deepface import DeepFace
 from torchvision import transforms
 
-from attack_plus import (
+from facesm_attack_core import (
     ALL_ATTACKS,
     ATTACKER_MODELS,
     ATTACK_COLS,
@@ -36,8 +36,7 @@ from attack_plus import (
     threshold_for,
     write_perf_csv,
 )
-from ir152 import IR_152
-from plot_pair_charts import create_pair_charts
+from ir152_model import IR_152
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
@@ -263,9 +262,9 @@ def discover_project_root(input_csv: Path) -> Path:
         value = 0
         if (root / "dataset_extractedfaces").is_dir():
             value += 4
-        if (root / "thresholds.json").is_file():
+        if (root / "verification_thresholds.json").is_file():
             value += 3
-        if (root / "ir152.py").is_file():
+        if (root / "ir152_model.py").is_file():
             value += 1
         if (root / "ir152.pth").is_file():
             value += 1
@@ -765,7 +764,7 @@ def build_perf_from_similarity(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Read transfer_adv_paths_all12.csv, calculate victim similarities, build performance CSV, and create charts.")
+    parser = argparse.ArgumentParser(description="Read transfer adversarial paths, calculate victim similarities, and build a performance CSV.")
     parser.add_argument("--input-csv", default="transfer_adv_paths_all12.csv")
     parser.add_argument(
         "--output-csv",
@@ -780,15 +779,13 @@ def parse_args():
     )
     parser.add_argument("--base-path", default="", help="Optional dataset_extractedfaces directory. Auto-detected if omitted.")
     parser.add_argument("--adv-base-path", default="", help="Optional project root for adversarial image paths. Auto-detected if omitted.")
-    parser.add_argument("--thresholds-json", default="", help="Optional thresholds.json path. Auto-detected if omitted.")
+    parser.add_argument("--thresholds-json", default="", help="Optional verification_thresholds.json path. Auto-detected if omitted.")
     parser.add_argument("--checkpoint-every", type=int, default=20)
     parser.add_argument("--progress-every", type=int, default=50, help="Print per-victim progress every N completed tasks.")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--workers", type=int, default=min(24, cpu_count()), help="Parallel workers for similarity sync.")
     parser.add_argument("--tf-threads", type=int, default=1)
     parser.add_argument("--snapshot-retries", type=int, default=3)
-    parser.add_argument("--charts-dir", default="", help="Optional charts output directory. Defaults to <output-dir>/charts.")
-    parser.add_argument("--skip-charts", action="store_true")
     parser.add_argument("--print-summary", action="store_true")
     parser.add_argument("--include-same-family-perf", action="store_true")
     parser.add_argument(
@@ -854,12 +851,15 @@ def main() -> None:
     thresholds_json = Path(args.thresholds_json).expanduser().resolve() if args.thresholds_json else (
         first_existing_file(
             [
+                project_root / "verification_thresholds.json",
+                input_csv.parent / "verification_thresholds.json",
+                Path.cwd() / "verification_thresholds.json",
                 project_root / "thresholds.json",
                 input_csv.parent / "thresholds.json",
                 Path.cwd() / "thresholds.json",
             ]
         )
-        or (project_root / "thresholds.json")
+        or (project_root / "verification_thresholds.json")
     )
     ir152_weights = Path(args.ir152_weights).expanduser().resolve() if args.ir152_weights else (
         first_existing_file(
@@ -871,17 +871,15 @@ def main() -> None:
         )
         or (project_root / "ir152.pth")
     )
-    charts_dir = Path(args.charts_dir).expanduser().resolve() if args.charts_dir else perf_csv.parent / "charts"
 
     if not input_csv.is_file():
         raise FileNotFoundError(f"Input CSV not found: {input_csv}")
     if not thresholds_json.is_file():
-        raise FileNotFoundError(f"thresholds.json not found. Checked near {project_root} and {input_csv.parent}")
+        raise FileNotFoundError(f"verification_thresholds.json not found. Checked near {project_root} and {input_csv.parent}")
     if not base_path.is_dir():
         raise FileNotFoundError(f"dataset_extractedfaces directory not found: {base_path}")
     perf_csv.parent.mkdir(parents=True, exist_ok=True)
     similarity_csv.parent.mkdir(parents=True, exist_ok=True)
-    charts_dir.mkdir(parents=True, exist_ok=True)
 
     with open(thresholds_json, "r", encoding="utf-8") as f:
         thresholds = json.load(f)
@@ -1062,9 +1060,6 @@ def main() -> None:
     if args.print_summary:
         print_pairwise_perf(perf_stats, attacks, "[perf] vanilla vs SM")
 
-    if not args.skip_charts:
-        create_pair_charts(perf_csv=Path(perf_csv), out_dir=charts_dir)
-        print(f"[charts] saved={charts_dir}")
 
 
 if __name__ == "__main__":

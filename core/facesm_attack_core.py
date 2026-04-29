@@ -18,7 +18,7 @@ import tensorflow as tf
 from PIL import Image
 from deepface import DeepFace
 
-from adv_cleanup_utils import cleanup_orphan_adv_images
+from adv_output_cleanup import cleanup_orphan_adv_images
 
 ATTACKER_MODELS = {
     "Facenet": (160, 160),
@@ -1185,11 +1185,11 @@ def parse_args():
     parser.add_argument(
         "--perf-csv",
         default="transfer_attack_performance.csv",
-        help="Reserved for external performance sync tooling. attack_plus.py does not write it.",
+        help="Reserved for external performance sync tooling. attack_core.py does not write it.",
     )
     parser.add_argument("--adv-root", default="adv_images")
     parser.add_argument("--base-path", default="dataset_extractedfaces")
-    parser.add_argument("--thresholds-json", default="thresholds.json")
+    parser.add_argument("--thresholds-json", default="verification_thresholds.json")
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--threads", type=int, default=28, help="Worker processes to use (default: 28)")
     parser.add_argument("--workers", type=int, default=0, help="Legacy alias. Used only when --threads <= 0")

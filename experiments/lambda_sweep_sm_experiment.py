@@ -13,8 +13,8 @@ import pandas as pd
 import tensorflow as tf
 from deepface import DeepFace
 
-import attack_plus
-from attack_plus import (
+import facesm_attack_core as attack_core
+from facesm_attack_core import (
     ATTACKER_MODELS,
     ATTACK_COLS,
     equivalent_models,
@@ -24,8 +24,8 @@ from attack_plus import (
     process_batch,
     threshold_for,
 )
-from ir152 import IR_152
-from sync_attack_performance import (
+from ir152_model import IR_152
+from evaluate_attack_performance import (
     IR152_INPUT_SIZE,
     compute_embedding,
     get_ir152_embedding,
@@ -244,8 +244,8 @@ def get_clean_context(
     if key in clean_cache:
         return clean_cache[key]
 
-    src_path = attack_plus.resolve_image_path(row.get("img1", ""), base_path)
-    tgt_path = attack_plus.resolve_image_path(row.get("img2", ""), base_path)
+    src_path = attack_core.resolve_image_path(row.get("img1", ""), base_path)
+    tgt_path = attack_core.resolve_image_path(row.get("img2", ""), base_path)
     if victim_name == "IR152":
         tgt_emb = get_ir152_embedding(victim_models[victim_name], tgt_path)
         src_emb = get_ir152_embedding(victim_models[victim_name], src_path)
@@ -290,7 +290,7 @@ def evaluate_adv_records(
                 input_size = MODEL_INPUT_SIZES[victim_name]
                 adv_emb = compute_embedding(victim_models[victim_name], load_and_preprocess(adv_path, input_size))
                 adv_sim = float(tf.reduce_sum(adv_emb * clean_ctx["target_emb"]).numpy())
-            breach = int(attack_plus.success_from_threshold(adv_sim, threshold, attack_type))
+            breach = int(attack_core.success_from_threshold(adv_sim, threshold, attack_type))
             impact = float(impact_value(clean_sim, adv_sim, attack_type))
             sim_rows.append(
                 {
@@ -386,7 +386,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Resumable lambda sweep for SM attacks using existing attack logic.")
     p.add_argument("--input-csv", default="input2400.csv")
     p.add_argument("--base-path", default="dataset_extractedfaces")
-    p.add_argument("--thresholds-json", default="thresholds.json")
+    p.add_argument("--thresholds-json", default="verification_thresholds.json")
     p.add_argument("--ir152-weights", default="ir152.pth")
     p.add_argument("--out-root", default=DEFAULT_OUT_ROOT)
     p.add_argument("--attack", default="SI_NI_FGSM_SM", choices=SM_ATTACKS)
@@ -405,7 +405,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    attack_plus.NUM_ITER = max(1, int(args.num_iter))
+    attack_core.NUM_ITER = max(1, int(args.num_iter))
     input_csv = Path(args.input_csv).resolve()
     base_path = Path(args.base_path).resolve()
     thresholds_json = Path(args.thresholds_json).resolve()
@@ -433,7 +433,7 @@ def main() -> None:
     sim_map: Dict[Tuple[int, str, float, str], Dict[str, object]] = load_similarity_map(sim_csv)
 
     print(f"[config] attack={args.attack} attackers={attackers} victims={victims} lambdas={lambdas}")
-    print(f"[config] sample_rows={len(sample_df)} num_iter={attack_plus.NUM_ITER} batch_size={args.batch_size} threads={args.threads} tf_threads={args.tf_threads}")
+    print(f"[config] sample_rows={len(sample_df)} num_iter={attack_core.NUM_ITER} batch_size={args.batch_size} threads={args.threads} tf_threads={args.tf_threads}")
     print(f"[config] out_root={out_root}")
 
     for attacker in attackers:

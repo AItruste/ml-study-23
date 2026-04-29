@@ -15,8 +15,8 @@ import tensorflow as tf
 from deepface import DeepFace
 from PIL import Image
 
-import attack_plus
-from attack_plus import (
+import facesm_attack_core as attack_core
+from facesm_attack_core import (
     ATTACKER_MODELS,
     DECAY,
     EPSILON,
@@ -26,8 +26,8 @@ from attack_plus import (
     resolve_image_path,
     threshold_for,
 )
-from ir152 import IR_152
-from sync_attack_performance import (
+from ir152_model import IR_152
+from evaluate_attack_performance import (
     compute_embedding,
     get_ir152_embedding,
     load_and_preprocess,
@@ -280,7 +280,7 @@ def evaluate_adv_records(
                 input_size = MODEL_INPUT_SIZES[victim_name]
                 adv_emb = compute_embedding(victim_models[victim_name], load_and_preprocess(adv_path, input_size))
                 adv_sim = float(tf.reduce_sum(adv_emb * clean_ctx["target_emb"]).numpy())
-            breach = int(attack_plus.success_from_threshold(adv_sim, threshold, attack_type))
+            breach = int(attack_core.success_from_threshold(adv_sim, threshold, attack_type))
             impact = float(impact_value(clean_sim, adv_sim, attack_type))
             sim_rows.append(
                 {
@@ -408,7 +408,7 @@ def config_by_key(config_key: str):
 
 
 def save_adv_image(img, attack_name: str, config_key: str, src: str, tgt: str, attack_type: str, model_name: str, row_id: int) -> str:
-    out_dir = os.path.join(attack_plus.WORKER_ADV_ROOT, model_name, attack_name, config_key)
+    out_dir = os.path.join(attack_core.WORKER_ADV_ROOT, model_name, attack_name, config_key)
     os.makedirs(out_dir, exist_ok=True)
     s = os.path.splitext(os.path.basename(src))[0].replace(" ", "_")
     t = os.path.splitext(os.path.basename(tgt))[0].replace(" ", "_")
@@ -420,7 +420,7 @@ def save_adv_image(img, attack_name: str, config_key: str, src: str, tgt: str, a
 
 
 def embedding_for_cfg(model, x, use_mirror: bool):
-    return attack_plus.compute_embedding(model, x, multi_view=use_mirror)
+    return attack_core.compute_embedding(model, x, multi_view=use_mirror)
 
 
 def loss_for_cfg(model, x, src_emb, tgt_emb, attack_type: str, use_mirror: bool, use_source: bool, source_lambda: float):
@@ -428,18 +428,18 @@ def loss_for_cfg(model, x, src_emb, tgt_emb, attack_type: str, use_mirror: bool,
     cos_t = tf.reduce_sum(emb * tgt_emb, axis=1)
     if use_source:
         cos_s = tf.reduce_sum(emb * src_emb, axis=1)
-        return attack_plus.attack_loss_sm(cos_t, cos_s, attack_type, source_lambda)
-    return attack_plus.attack_loss(cos_t, attack_type)
+        return attack_core.attack_loss_sm(cos_t, cos_s, attack_type, source_lambda)
+    return attack_core.attack_loss(cos_t, attack_type)
 
 
 def pgd_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda):
-    if attack_plus.WORKER_PGD_RANDOM_START:
+    if attack_core.WORKER_PGD_RANDOM_START:
         noise = tf.random.uniform(tf.shape(x), minval=-EPSILON, maxval=EPSILON, dtype=x.dtype)
         adv = tf.clip_by_value(x + noise, -1.0, 1.0)
     else:
         adv = tf.identity(x)
-    alpha = EPSILON / attack_plus.NUM_ITER
-    for _ in range(attack_plus.NUM_ITER):
+    alpha = EPSILON / attack_core.NUM_ITER
+    for _ in range(attack_core.NUM_ITER):
         with tf.GradientTape() as tape:
             tape.watch(adv)
             loss = loss_for_cfg(model, adv, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda)
@@ -453,8 +453,8 @@ def pgd_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, sou
 def mi_fgsm_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda):
     adv = tf.identity(x)
     g = tf.zeros_like(x)
-    alpha = EPSILON / attack_plus.NUM_ITER
-    for _ in range(attack_plus.NUM_ITER):
+    alpha = EPSILON / attack_core.NUM_ITER
+    for _ in range(attack_core.NUM_ITER):
         with tf.GradientTape() as tape:
             tape.watch(adv)
             loss = loss_for_cfg(model, adv, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda)
@@ -469,9 +469,9 @@ def mi_fgsm_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source,
 
 def ti_fgsm_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda):
     adv = tf.identity(x)
-    alpha = EPSILON / attack_plus.NUM_ITER
-    kernel = attack_plus.gaussian_kernel()
-    for _ in range(attack_plus.NUM_ITER):
+    alpha = EPSILON / attack_core.NUM_ITER
+    kernel = attack_core.gaussian_kernel()
+    for _ in range(attack_core.NUM_ITER):
         with tf.GradientTape() as tape:
             tape.watch(adv)
             loss = loss_for_cfg(model, adv, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda)
@@ -486,9 +486,9 @@ def ti_fgsm_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source,
 def si_ni_fgsm_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda):
     adv = tf.identity(x)
     g = tf.zeros_like(x)
-    alpha = EPSILON / attack_plus.NUM_ITER
+    alpha = EPSILON / attack_core.NUM_ITER
     scales = (1.0, 0.5, 0.25, 0.125, 0.0625)
-    for _ in range(attack_plus.NUM_ITER):
+    for _ in range(attack_core.NUM_ITER):
         nes = adv + DECAY * alpha * g
         grad_sum = tf.zeros_like(x)
         for s in scales:
@@ -508,26 +508,26 @@ def si_ni_fgsm_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_sour
 def mi_admix_di_ti_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda, pool_imgs, input_size):
     adv = tf.identity(x)
     g = tf.zeros_like(x)
-    alpha = EPSILON / attack_plus.NUM_ITER
-    kernel = attack_plus.gaussian_kernel()
+    alpha = EPSILON / attack_core.NUM_ITER
+    kernel = attack_core.gaussian_kernel()
     n_pool = tf.shape(pool_imgs)[0]
-    for _ in range(attack_plus.NUM_ITER):
+    for _ in range(attack_core.NUM_ITER):
         with tf.GradientTape() as tape:
             tape.watch(adv)
             idx = tf.random.uniform([3], 0, n_pool, dtype=tf.int32)
             others = tf.gather(pool_imgs, idx)
             adv_rep = tf.repeat(adv, 3, axis=0)
             mixed = adv_rep + 0.2 * (others - adv_rep)
-            batch = attack_plus.input_diversity(mixed, input_size)
+            batch = attack_core.input_diversity(mixed, input_size)
             emb = embedding_for_cfg(model, batch, use_mirror)
             tgt_rep = tf.repeat(tgt_emb, 3, axis=0)
             cos_t = tf.reduce_sum(emb * tgt_rep, axis=1)
             if use_source:
                 src_rep = tf.repeat(src_emb, 3, axis=0)
                 cos_s = tf.reduce_sum(emb * src_rep, axis=1)
-                loss = attack_plus.attack_loss_sm(cos_t, cos_s, attack_type, source_lambda)
+                loss = attack_core.attack_loss_sm(cos_t, cos_s, attack_type, source_lambda)
             else:
-                loss = attack_plus.attack_loss(cos_t, attack_type)
+                loss = attack_core.attack_loss(cos_t, attack_type)
         grad = tape.gradient(loss, adv)
         grad = tf.nn.depthwise_conv2d(grad, kernel, [1, 1, 1, 1], "SAME")
         grad = grad / (tf.reduce_mean(tf.abs(grad)) + 1e-8)
@@ -541,9 +541,9 @@ def mi_admix_di_ti_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_
 def rap_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda):
     adv = tf.identity(x)
     g = tf.zeros_like(x)
-    alpha = EPSILON / attack_plus.NUM_ITER
-    kernel = attack_plus.gaussian_kernel()
-    for _ in range(attack_plus.NUM_ITER):
+    alpha = EPSILON / attack_core.NUM_ITER
+    kernel = attack_core.gaussian_kernel()
+    for _ in range(attack_core.NUM_ITER):
         with tf.GradientTape() as tape:
             tape.watch(adv)
             delta = tf.zeros_like(adv)
@@ -568,7 +568,7 @@ def rap_cfg(model, x, src_emb, tgt_emb, attack_type, use_mirror, use_source, sou
 
 
 def run_attack_cfg(attack_name, src, tgt, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda):
-    model = attack_plus.WORKER_MODEL
+    model = attack_core.WORKER_MODEL
     if attack_name == "PGD":
         return pgd_cfg(model, src, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda)
     if attack_name == "MI_FGSM":
@@ -579,7 +579,7 @@ def run_attack_cfg(attack_name, src, tgt, src_emb, tgt_emb, attack_type, use_mir
         return si_ni_fgsm_cfg(model, src, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda)
     if attack_name == "MI_ADMIX_DI_TI":
         pool_imgs = tf.concat([src, tgt, src], axis=0)
-        return mi_admix_di_ti_cfg(model, src, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda, pool_imgs, attack_plus.WORKER_INPUT_SIZE)
+        return mi_admix_di_ti_cfg(model, src, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda, pool_imgs, attack_core.WORKER_INPUT_SIZE)
     if attack_name == "RAP":
         return rap_cfg(model, src, src_emb, tgt_emb, attack_type, use_mirror, use_source, source_lambda)
     raise ValueError(f"Unsupported attack: {attack_name}")
@@ -587,7 +587,7 @@ def run_attack_cfg(attack_name, src, tgt, src_emb, tgt_emb, attack_type, use_mir
 
 def init_ablation_worker(model_name, input_size, base_path, adv_root, tf_threads, source_lambda, pgd_random_start, config_key):
     global WORKER_CONFIG_KEY, WORKER_CONFIG_LABEL, WORKER_USE_MIRROR, WORKER_USE_SOURCE
-    attack_plus.init_worker(model_name, input_size, base_path, adv_root, [], tf_threads, source_lambda, pgd_random_start)
+    attack_core.init_worker(model_name, input_size, base_path, adv_root, [], tf_threads, source_lambda, pgd_random_start)
     WORKER_CONFIG_KEY, WORKER_CONFIG_LABEL, WORKER_USE_MIRROR, WORKER_USE_SOURCE = config_by_key(config_key)
 
 
@@ -596,7 +596,7 @@ def process_ablation_row(payload):
     key, label, use_mirror, use_source = config_by_key(config_key)
     out = {
         "row_id": int(row_id),
-        "attacker_model": attack_plus.WORKER_MODEL_NAME,
+        "attacker_model": attack_core.WORKER_MODEL_NAME,
         "config_key": key,
         "config_label": label,
         "attack_name": attack_name,
@@ -607,21 +607,21 @@ def process_ablation_row(payload):
         "adv_path": "",
     }
     try:
-        src_path = resolve_image_path(row.get("img1", ""), attack_plus.WORKER_BASE_PATH)
-        tgt_path = resolve_image_path(row.get("img2", ""), attack_plus.WORKER_BASE_PATH)
+        src_path = resolve_image_path(row.get("img1", ""), attack_core.WORKER_BASE_PATH)
+        tgt_path = resolve_image_path(row.get("img2", ""), attack_core.WORKER_BASE_PATH)
         if not os.path.exists(src_path):
             raise FileNotFoundError(f"Source image not found: {src_path}")
         if not os.path.exists(tgt_path):
             raise FileNotFoundError(f"Target image not found: {tgt_path}")
 
-        src = tf.expand_dims(attack_plus.load_and_preprocess(src_path, attack_plus.WORKER_INPUT_SIZE), 0)
-        tgt = tf.expand_dims(attack_plus.load_and_preprocess(tgt_path, attack_plus.WORKER_INPUT_SIZE), 0)
+        src = tf.expand_dims(attack_core.load_and_preprocess(src_path, attack_core.WORKER_INPUT_SIZE), 0)
+        tgt = tf.expand_dims(attack_core.load_and_preprocess(tgt_path, attack_core.WORKER_INPUT_SIZE), 0)
         attack_type = str(row.get("attack_type", ""))
-        tgt_emb = embedding_for_cfg(attack_plus.WORKER_MODEL, tgt, use_mirror)
-        src_emb = embedding_for_cfg(attack_plus.WORKER_MODEL, src, use_mirror if use_source or use_mirror else False)
-        adv = run_attack_cfg(attack_name, src, tgt, src_emb, tgt_emb, attack_type, use_mirror, use_source, attack_plus.WORKER_SOURCE_LAMBDA)
-        adv_img = attack_plus.denormalize(adv.numpy()[0])
-        out["adv_path"] = save_adv_image(adv_img, attack_name, key, src_path, tgt_path, attack_type.lower(), attack_plus.WORKER_MODEL_NAME, row_id)
+        tgt_emb = embedding_for_cfg(attack_core.WORKER_MODEL, tgt, use_mirror)
+        src_emb = embedding_for_cfg(attack_core.WORKER_MODEL, src, use_mirror if use_source or use_mirror else False)
+        adv = run_attack_cfg(attack_name, src, tgt, src_emb, tgt_emb, attack_type, use_mirror, use_source, attack_core.WORKER_SOURCE_LAMBDA)
+        adv_img = attack_core.denormalize(adv.numpy()[0])
+        out["adv_path"] = save_adv_image(adv_img, attack_name, key, src_path, tgt_path, attack_type.lower(), attack_core.WORKER_MODEL_NAME, row_id)
     except Exception:
         traceback.print_exc()
     return out
@@ -635,7 +635,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Resumable ablation for source separation and mirror fusion without changing main attack code.")
     p.add_argument("--input-csv", default="input2400.csv")
     p.add_argument("--base-path", default="dataset_extractedfaces")
-    p.add_argument("--thresholds-json", default="thresholds.json")
+    p.add_argument("--thresholds-json", default="verification_thresholds.json")
     p.add_argument("--ir152-weights", default="ir152.pth")
     p.add_argument("--out-root", default=DEFAULT_OUT_ROOT)
     p.add_argument("--attack", default=DEFAULT_ATTACK, choices=BASE_ATTACKS)
@@ -654,7 +654,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    attack_plus.NUM_ITER = max(1, int(args.num_iter))
+    attack_core.NUM_ITER = max(1, int(args.num_iter))
     input_csv = Path(args.input_csv).resolve()
     base_path = Path(args.base_path).resolve()
     thresholds_json = Path(args.thresholds_json).resolve()
@@ -682,7 +682,7 @@ def main() -> None:
     sim_map = load_similarity_map(sim_csv)
 
     print(f"[config] attack={args.attack} attackers={attackers} victims={victims}")
-    print(f"[config] sample_rows={len(sample_df)} source_lambda={args.source_lambda} num_iter={attack_plus.NUM_ITER} batch_size={args.batch_size} threads={args.threads} tf_threads={args.tf_threads}")
+    print(f"[config] sample_rows={len(sample_df)} source_lambda={args.source_lambda} num_iter={attack_core.NUM_ITER} batch_size={args.batch_size} threads={args.threads} tf_threads={args.tf_threads}")
     print(f"[config] out_root={out_root}")
 
     for attacker in attackers:

@@ -12,3 +12,7 @@ This folder contains the main scripts and notes used to rebuild paper summaries 
 - `run_robfr_lgc_extension.py`: extends the RobFR validation to include the LGC attack.
 - `robfr_sm_integration_notes.md`: notes on how FaceSM was integrated into the RobFR workflow.
 - `emb_trajectory_grad_alignment_experiment.ipynb`: notebook used for embedding-trajectory and gradient-alignment analysis.
+
+## Core dependencies
+
+The scripts in this folder mainly rely on the `core/facesm_attack_core.py`, `core/evaluate_attack_performance.py`, `core/ir152_model.py`, and `core/verification_thresholds.json` files.
