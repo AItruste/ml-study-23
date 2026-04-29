@@ -15,5 +15,5 @@ This folder contains the anonymous LaTeX submission source used for the manuscri
 ## Notes
 
 - The manuscript source is preserved in review-ready form.
-- The figure PDFs here are the exact paper assets; the `charts/` directory at repo root contains companion rendered summary charts used for quick browsing.
+- The figure PDFs here are the exact paper assets used in the anonymous submission.
 - Raw dataset images and pretrained weights are not distributed in this repository.

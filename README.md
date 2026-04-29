@@ -9,7 +9,7 @@ If you are reviewing the paper and want the quickest path through the materials:
 1. Open `paper/facesm-dc.tex` for the manuscript source.
 2. Check `paper/` for the exact figure PDFs referenced in the submission.
 3. Check `results_summary/` for the verified CSV files behind the main tables and figures.
-4. Use `charts/` for quick visual versions of the main result summaries.
+4. Use `docs/manuscript_result_map.md` to trace manuscript claims to repository files.
 
 ## Repository Layout
 
@@ -17,18 +17,14 @@ If you are reviewing the paper and want the quickest path through the materials:
   - Anonymous LaTeX submission source and exact figure PDFs used in the manuscript.
 - `results_summary/`
   - Compact CSV files backing the paper tables and figure values.
-- `charts/`
-  - Rendered charts for quick inspection of the main summaries.
 - `core/`
   - Main attack and evaluation code, plus utilities used during result consolidation.
 - `experiments/`
   - Scripts and notebooks used to rebuild summary tables, ablations, sensitivity studies, and RobFR validation.
-- `scripts/`
-  - Shell wrappers used during experiment refresh and result preparation.
 - `robfr_patch/`
   - Local RobFR-side modifications used for the external validation experiments.
 - `docs/`
-  - Notes on data availability, repository release cleanup, and manuscript/result mapping.
+  - Data-availability notes and a manuscript-to-results map.
 
 ## What Is Included
 
@@ -36,7 +32,6 @@ If you are reviewing the paper and want the quickest path through the materials:
 - exact manuscript figure PDFs
 - verified result summary CSV files
 - core implementation and experiment scripts
-- rendered charts for the main reported trends
 
 ## What Is Not Included
 

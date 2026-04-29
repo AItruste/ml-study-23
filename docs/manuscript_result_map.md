@@ -34,6 +34,3 @@ This note links the main manuscript tables and figures to the repository files t
   - `paper/fig5a_sini_alignment.pdf`
   - `paper/fig5b_alignment_gain.pdf`
 
-## Companion browsing assets
-
-The `charts/` folder contains lightweight PNG charts for quick browsing. These are not meant to replace the exact manuscript PDFs in `paper/`.
