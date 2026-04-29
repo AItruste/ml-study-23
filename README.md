@@ -1,52 +1,76 @@
 # Anonymous Study Repository
 
-This repository contains code and scripts used for experimental evaluation of transferability and robustness in machine learning models.
+Anonymous review repository for the FaceSM study on transferable adversarial attacks against face verification systems.
 
-It provides implementations, evaluation pipelines, and reproducibility utilities used in the study, along with compact summaries of experimental results.
+This repository contains the core implementation, experiment scripts, verified summary CSV files, and paper figures used to support the manuscript results. It is designed as a lightweight review package rather than a full training workspace.
 
 ## Repository Layout
 
 - `core/`
-  - Main attack and evaluation code, including core implementation, evaluation utilities, and plotting scripts.
+  - Main attack and evaluation code, including the attack implementation, rescoring utilities, plotting helpers, and threshold configuration.
 - `experiments/`
-  - Scripts for benchmark reconstruction, ablation analysis, and parameter sensitivity studies.
+  - Scripts for rebuilding benchmark summaries, ablation analysis, lambda sensitivity analysis, and RobFR validation.
 - `scripts/`
-  - Shell utilities used to run and organize experiments.
+  - Shell wrappers used during experiment refresh and result preparation.
 - `robfr_patch/`
-  - Local modifications used for extended evaluation setups.
+  - Local RobFR modifications used for the external validation experiments.
 - `results_summary/`
-  - Compact CSV summaries and chart images used for reporting results.
+  - Compact CSV summaries used for manuscript tables and figures.
+- `charts/`
+  - Rendered figure files derived from the verified summaries.
 - `docs/`
-  - Notes related to release and usage.
+  - Release and usage notes.
 
 ## What Is Included
 
-- Core implementation used in the study  
+- Core implementation used in the study
 - Experiment scripts for:
-  - benchmark reconstruction  
-  - ablation analysis  
-  - parameter sensitivity studies  
-  - extended evaluation setups  
-- Summary CSV files used for tables and figures  
-- Generated visualizations used in the manuscript  
+  - main benchmark summary rebuilding
+  - ablation analysis
+  - source-separation sensitivity analysis
+  - RobFR external validation including LGC extension
+- Verified summary CSV files used for manuscript tables and charts
+- Generated chart files used in the manuscript
 
 ## What Is Not Included
 
-To keep the repository lightweight:
+To keep the repository lightweight and reviewer-safe, the following are intentionally excluded:
 
-- large pretrained model weights  
-- datasets  
-- generated adversarial samples  
-- full external evaluation frameworks  
+- large pretrained model weights
+- raw benchmark datasets
+- generated adversarial image dumps
+- the complete external evaluation workspace
 
 ## Reproducibility Notes
 
-The original experiments were conducted in a larger workspace that included datasets, pretrained models, and additional evaluation components.
+The original experiments were run in a larger workspace that included public face datasets, pretrained weights, and local evaluation checkouts. To reproduce the full pipeline, users need to:
 
-To fully reproduce results, users need to:
-- provide appropriate datasets  
-- place pretrained models in expected locations  
-- adapt paths if needed  
+- obtain the required datasets from their official sources
+- place pretrained weights in the expected locations
+- provide the benchmark pair definitions and any external framework dependencies
+
+Raw LFW, CelebA, and VGGFace2 images are not redistributed here.
+
+## Key Result Files
+
+The main manuscript numbers are backed by the following summary files:
+
+- `results_summary/pairwise_split_summary.csv`
+- `results_summary/modelwise_summary.csv`
+- `results_summary/datasetwise_summary.csv`
+- `results_summary/cross_model_transferability_analysis_with_attacker_victim_pairs.csv`
+- `results_summary/ablation_overall_summary.csv`
+- `results_summary/lambda_sweep_summary.csv`
+- `results_summary/robfr_external_validation_all_attacks.csv`
+
+## Notes on Evaluation Scope
+
+Two different aggregation scopes are present in the repository:
+
+- `results_summary/modelwise_summary.csv` reports surrogate-wise averages on the main benchmark common victim pool.
+- `results_summary/cross_model_transferability_analysis_with_attacker_victim_pairs.csv` reports broader attacker-victim transfer pairs and excludes the `Facenet512 -> Facenet` same-family case.
+
+Because these scopes differ, some aggregate numbers for the same surrogate can differ between sections of the manuscript.
 
 ## Minimal Setup
 
@@ -54,3 +78,11 @@ To fully reproduce results, users need to:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+## Suggested Reviewer Entry Points
+
+- Main benchmark summaries: `results_summary/`
+- Paper figure files: `charts/`
+- Summary rebuild script: `experiments/build_paper_results_lambda20_limit1000.py`
+- RobFR extension script: `experiments/run_robfr_lgc_extension.py`

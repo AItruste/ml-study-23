@@ -213,7 +213,6 @@ def resolve_clean_path(csv_path: str, base_path: str) -> str:
         return remapped
 
     wrong_prefixes = [
-        "/home/sstl_pratishtha/",
         "/content/face_module/dataset_extractedfaces/",
         "/content/face_module/dataset_extractedfaces",
     ]
