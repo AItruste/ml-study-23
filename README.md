@@ -54,15 +54,6 @@ The primary manuscript numbers are backed by the following summary files:
 - `results_summary/lambda_sweep_summary.csv`
 - `results_summary/robfr_external_validation_all_attacks.csv`
 
-## Scope Note for Aggregate Numbers
-
-Two different aggregation scopes appear in the repository:
-
-- `results_summary/modelwise_summary.csv` reports surrogate-wise averages on the main benchmark common victim pool.
-- `results_summary/cross_model_transferability_analysis_with_attacker_victim_pairs.csv` reports a broader cross-model protocol and excludes the `Facenet512 -> Facenet` same-family case.
-
-Because the victim pools differ, some aggregate numbers for the same surrogate can differ between manuscript sections. This is expected and reflects the evaluation scope rather than a data inconsistency.
-
 ## Minimal Setup
 
 ```bash
