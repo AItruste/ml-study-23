@@ -1,59 +1,55 @@
-# Anonymous Study Repository
+# FaceSM Anonymous Review Repository
 
-Anonymous review repository for the FaceSM study on transferable adversarial attacks against face verification systems.
+This repository is the anonymous review package for the FaceSM study on transferable adversarial attacks against face verification systems. It is organized to make the paper easy to audit: the manuscript source is included, the figure assets used in the submission are present, and the main reported numbers are backed by compact CSV summaries.
 
-This repository contains the core implementation, experiment scripts, verified summary CSV files, and paper figures used to support the manuscript results. It is designed as a lightweight review package rather than a full training workspace.
+## Start Here
+
+If you are reviewing the paper and want the quickest path through the materials:
+
+1. Open `paper/facesm-dc.tex` for the manuscript source.
+2. Check `paper/` for the exact figure PDFs referenced in the submission.
+3. Check `results_summary/` for the verified CSV files behind the main tables and figures.
+4. Use `charts/` for quick visual versions of the main result summaries.
 
 ## Repository Layout
 
+- `paper/`
+  - Anonymous LaTeX submission source and exact figure PDFs used in the manuscript.
+- `results_summary/`
+  - Compact CSV files backing the paper tables and figure values.
+- `charts/`
+  - Rendered charts for quick inspection of the main summaries.
 - `core/`
-  - Main attack and evaluation code, including the attack implementation, rescoring utilities, plotting helpers, and threshold configuration.
+  - Main attack and evaluation code, plus utilities used during result consolidation.
 - `experiments/`
-  - Scripts for rebuilding benchmark summaries, ablation analysis, lambda sensitivity analysis, and RobFR validation.
+  - Scripts and notebooks used to rebuild summary tables, ablations, sensitivity studies, and RobFR validation.
 - `scripts/`
   - Shell wrappers used during experiment refresh and result preparation.
 - `robfr_patch/`
-  - Local RobFR modifications used for the external validation experiments.
-- `results_summary/`
-  - Compact CSV summaries used for manuscript tables and figures.
-- `charts/`
-  - Rendered figure files derived from the verified summaries.
+  - Local RobFR-side modifications used for the external validation experiments.
 - `docs/`
-  - Release and usage notes.
+  - Notes on data availability, repository release cleanup, and manuscript/result mapping.
 
 ## What Is Included
 
-- Core implementation used in the study
-- Experiment scripts for:
-  - main benchmark summary rebuilding
-  - ablation analysis
-  - source-separation sensitivity analysis
-  - RobFR external validation including LGC extension
-- Verified summary CSV files used for manuscript tables and charts
-- Generated chart files used in the manuscript
+- anonymous manuscript source
+- exact manuscript figure PDFs
+- verified result summary CSV files
+- core implementation and experiment scripts
+- rendered charts for the main reported trends
 
 ## What Is Not Included
 
-To keep the repository lightweight and reviewer-safe, the following are intentionally excluded:
+To keep the review package lightweight and safe to share, the repository intentionally excludes:
 
+- raw face dataset images
 - large pretrained model weights
-- raw benchmark datasets
-- generated adversarial image dumps
-- the complete external evaluation workspace
+- full generated adversarial image dumps
+- the larger private workspace used during experiment execution
 
-## Reproducibility Notes
+## Main Result Files
 
-The original experiments were run in a larger workspace that included public face datasets, pretrained weights, and local evaluation checkouts. To reproduce the full pipeline, users need to:
-
-- obtain the required datasets from their official sources
-- place pretrained weights in the expected locations
-- provide the benchmark pair definitions and any external framework dependencies
-
-Raw LFW, CelebA, and VGGFace2 images are not redistributed here.
-
-## Key Result Files
-
-The main manuscript numbers are backed by the following summary files:
+The primary manuscript numbers are backed by the following summary files:
 
 - `results_summary/pairwise_split_summary.csv`
 - `results_summary/modelwise_summary.csv`
@@ -63,14 +59,14 @@ The main manuscript numbers are backed by the following summary files:
 - `results_summary/lambda_sweep_summary.csv`
 - `results_summary/robfr_external_validation_all_attacks.csv`
 
-## Notes on Evaluation Scope
+## Scope Note for Aggregate Numbers
 
-Two different aggregation scopes are present in the repository:
+Two different aggregation scopes appear in the repository:
 
 - `results_summary/modelwise_summary.csv` reports surrogate-wise averages on the main benchmark common victim pool.
-- `results_summary/cross_model_transferability_analysis_with_attacker_victim_pairs.csv` reports broader attacker-victim transfer pairs and excludes the `Facenet512 -> Facenet` same-family case.
+- `results_summary/cross_model_transferability_analysis_with_attacker_victim_pairs.csv` reports a broader cross-model protocol and excludes the `Facenet512 -> Facenet` same-family case.
 
-Because these scopes differ, some aggregate numbers for the same surrogate can differ between sections of the manuscript.
+Because the victim pools differ, some aggregate numbers for the same surrogate can differ between manuscript sections. This is expected and reflects the evaluation scope rather than a data inconsistency.
 
 ## Minimal Setup
 
@@ -82,7 +78,8 @@ pip install -r requirements.txt
 
 ## Suggested Reviewer Entry Points
 
-- Main benchmark summaries: `results_summary/`
-- Paper figure files: `charts/`
-- Summary rebuild script: `experiments/build_paper_results_lambda20_limit1000.py`
+- manuscript source: `paper/facesm-dc.tex`
+- figure assets: `paper/`
+- verified summaries: `results_summary/`
+- summary rebuild script: `experiments/build_paper_results_lambda20_limit1000.py`
 - RobFR extension script: `experiments/run_robfr_lgc_extension.py`
