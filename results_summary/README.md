@@ -3,6 +3,7 @@
 This folder contains compact CSV files used for manuscript verification.
 
 ## Files
+
 - `pairwise_split_summary.csv`: attack-wise comparison for impersonation and dodging.
 - `modelwise_summary.csv`: surrogate-wise averages on the main benchmark common victim pool.
 - `datasetwise_summary.csv`: dataset-wise averages on the main benchmark common victim pool.
@@ -11,6 +12,3 @@ This folder contains compact CSV files used for manuscript verification.
 - `lambda_sweep_summary.csv`: sensitivity results over source-separation weight values.
 - `robfr_external_validation_all_attacks.csv`: RobFR validation summary including BIM, MIM, CIM, and LGC.
 - `surrogate_wise_behavior_with_victim_pool.csv`: surrogate-wise section CSV with explicit victim-pool annotation.
-
-## Important Scope Note
-`modelwise_summary.csv` and `cross_model_transferability_analysis_with_attacker_victim_pairs.csv` are not interchangeable. The former uses the restricted main-benchmark victim pool, whereas the latter uses a broader cross-model analysis protocol.
