@@ -6,3 +6,4 @@ This folder contains short supporting notes for the anonymous review package.
 
 - `data_availability_note.md`: explains what data is and is not distributed in the repository.
 - `manuscript_result_map.md`: maps manuscript tables and figures to the repository files that support them.
+- `input_pairs.csv`: conatins identity pairs from three datasets
